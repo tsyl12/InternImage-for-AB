@@ -6,3 +6,8 @@ classification/convertor/
 segmentation/convertor/
 checkpoint_dir/
 demo/
+detection/demo
+detection/checkpoints
+detection/model_inputs
+detection/model_outputs
+detection/*.tmp
