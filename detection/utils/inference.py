@@ -22,7 +22,7 @@ def focal_patch_batch(model, image_path):
     min_overlap_w = cfg['min_overlap'][0]
     remove_detections_from_edges = cfg['remove_detections_from_edges']
     remove_detections_from_edges_proximity = cfg['remove_detections_from_edges_proximity']
-    postprocess_score_threshold = cfg['postprocess_score_threshold']
+    score_thresholds = cfg['score_thresholds']
     nms_iou_threshold = cfg['nms_iou_threshold']
     nms_ioa_threshold = cfg['nms_ioa_threshold']
 
@@ -77,7 +77,7 @@ def focal_patch_batch(model, image_path):
                     filter_right=index_w != indexes_w[-1],
                     remove_detections_from_edges=remove_detections_from_edges,
                     remove_detections_from_edges_proximity=remove_detections_from_edges_proximity,
-                    postprocess_score_threshold=postprocess_score_threshold,
+                    score_thresholds=score_thresholds,
                 )
 
                 # compensate for crop
@@ -157,7 +157,7 @@ def filter_patch_edges_and_score(
         filter_right: bool,
         remove_detections_from_edges: bool,
         remove_detections_from_edges_proximity: float,
-        postprocess_score_threshold: float,
+        score_thresholds: dict,
 ) -> Tuple[list, list]:
     # filter cutoff detections on patch edges which are not image edges for effective NMS
     filtered_bboxes = []
@@ -181,7 +181,11 @@ def filter_patch_edges_and_score(
                 filter_on_left = class_bboxes[det_ind, 0] <= remove_detections_from_edges_proximity and filter_left
                 filter_on_right = class_bboxes[det_ind, 2] >= input_w - 1 - remove_detections_from_edges_proximity and filter_right
                 # check if the score is over the threshold (improves NMS times)
-                over_score_threshold = class_bboxes[det_ind, 4] >= postprocess_score_threshold
+                if class_ind in score_thresholds['per_class']:
+                    score_threshold = score_thresholds['per_class'][class_ind]
+                else:
+                    score_threshold = score_thresholds['general']
+                over_score_threshold = class_bboxes[det_ind, 4] >= score_threshold
                 # if bbox is not on one of the edges and over score threshold
                 if (remove_detections_from_edges and not any([filter_on_top, filter_on_bottom, filter_on_left, filter_on_right])) and over_score_threshold:
                     filtered_class_bboxes = np.row_stack((filtered_class_bboxes, class_bboxes[det_ind, :]))

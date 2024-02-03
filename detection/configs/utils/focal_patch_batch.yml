@@ -3,6 +3,10 @@ patch_shape: [800, 500]
 min_overlap: [200, 200]
 remove_detections_from_edges: True
 remove_detections_from_edges_proximity: 3
-postprocess_score_threshold: 0.3
+score_thresholds:
+  per_class:
+    1: 0.1
+    2: 0.4
+  general: 0.3
 nms_iou_threshold: 0.3
 nms_ioa_threshold: 0.7

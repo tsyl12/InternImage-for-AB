@@ -64,7 +64,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         '--score-thr',
         type=float,
-        default=0.3,
+        default=0.0,
         help='bbox score threshold',
     )
     parser.add_argument(
