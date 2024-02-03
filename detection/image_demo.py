@@ -8,6 +8,7 @@ from mmdet.apis import init_detector, inference_detector
 import mmcv_custom  # noqa: F401,F403
 import mmdet_custom  # noqa: F401,F403
 from utils.data import prepare_files
+from utils.inference import focal_patch_batch
 
 
 def parse_args() -> Namespace:
@@ -41,6 +42,11 @@ def parse_args() -> Namespace:
         '--allow_download',
         action='store_true',
         help='whether to allow the downloading of the inference images and model checkpoint',
+    )
+    parser.add_argument(
+        '--focal_patch_batch',
+        action='store_true',
+        help='whether to perform focal patch batch inference for reduced scale sensitivity',
     )
 
     # previous arguments
@@ -84,16 +90,21 @@ def main(args):
 
     # make outputs directory and iterate over the inputs
     mmcv.mkdir_or_exist(args.model_outputs)
+
+    # select the inference method
+    inference_method = focal_patch_batch if args.focal_patch_batch else inference_detector
+
+    # iterate over inputs
     for image_path in files_paths['model_input_paths']:
         out_file_path = os.path.join(args.model_outputs, os.path.basename(image_path))
         if os.path.exists(out_file_path) and input(f'File {out_file_path} already exists. Overwrite? (y, [n]): ') != 'y':
             continue
 
-        image_path = cv2.imread(image_path)
-        # inference a single image
-        result = inference_detector(model, image_path)
+        # inference
+        result = inference_method(model, image_path)
 
         # show the results
+        print('Visualizing ...')
         model.show_result(
             image_path,
             result,
