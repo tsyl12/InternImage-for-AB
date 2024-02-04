@@ -3,7 +3,7 @@ from typing import Tuple, List
 
 import wget
 
-SUPPORTED_IMAGE_FORMATS = ['jpg', 'jpeg', 'png']
+SUPPORTED_IMAGE_FORMATS = ['jpg', 'jpeg', 'png', 'tif', 'tiff']
 DEFAULT_IMAGE_DIR = 'model_inputs'
 DEFAULT_CHECKPOINTS_DIR = 'checkpoints'
 IMAGE_URLS = {

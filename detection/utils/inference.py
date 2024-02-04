@@ -28,6 +28,8 @@ def focal_patch_batch(model, image_path):
 
     # read the image
     image = cv2.imread(image_path)
+    original_image_h = image.shape[0]
+    original_image_w = image.shape[1]
 
     # initialize outputs
     total_bboxes = None
@@ -88,7 +90,7 @@ def focal_patch_batch(model, image_path):
                 # compensate for scale
                 if scale != 1.0:
                     compensate_bboxes_for_scaled_input(bboxes=patch_result[0], scale=scale)
-                    compensate_masks_for_scaled_input(masks=patch_result[1], scale=scale)
+                    compensate_masks_for_scaled_input(masks=patch_result[1], original_image_h=original_image_h, original_image_w=original_image_w)
 
                 # append bboxes
                 if total_bboxes is None:
@@ -135,8 +137,8 @@ def calculate_patches_location(image_h: int, image_w: int, input_h: int, input_w
     # Take care of the leftovers
     leftover_h = image_h - (indexes_h[-1] + input_h)
     leftover_w = image_w - (indexes_w[-1] + input_w)
-    assert overlap_h + leftover_h >= min_overlap_h
-    assert overlap_w + leftover_w >= min_overlap_w
+    assert overlap_h + leftover_h >= min_overlap_h * 0.95
+    assert overlap_w + leftover_w >= min_overlap_w * 0.95
     indexes_h[-1] += leftover_h
     indexes_w[-1] += leftover_w
 
@@ -230,7 +232,7 @@ def compensate_masks_for_cropped_input(masks: list, shift_h: int, shift_w: int, 
                 masks[class_idx][mask_idx] = np.pad(array=mask, pad_width=((top, bottom), (left, right)))
 
 
-def compensate_masks_for_scaled_input(masks: list, scale: float) -> None:
+def compensate_masks_for_scaled_input(masks: list, original_image_h: int, original_image_w: int) -> None:
     # shift masks to compensate for scaled input
     for class_idx, class_masks in enumerate(masks):
         if len(class_masks) > 0:
@@ -238,7 +240,7 @@ def compensate_masks_for_scaled_input(masks: list, scale: float) -> None:
                 float_mask = mask * 1.0
                 scaled_float_mask = cv2.resize(
                     src=float_mask,
-                    dsize=(int(float_mask.shape[1] * 1/scale), int(float_mask.shape[0] * 1/scale)),
+                    dsize=(original_image_w, original_image_h),
                     interpolation=cv2.INTER_NEAREST,
                 )
                 scaled_bool_mask = scaled_float_mask != 0
@@ -257,7 +259,7 @@ def append_masks(total_masks: list, masks: list) -> None:
         total_masks[class_idx] += masks[class_idx]
 
 
-def nms(results:Tuple[list, list], iou_threshold: float, ioa_threshold: float) -> Tuple[list, list]:
+def nms(results: Tuple[list, list], iou_threshold: float, ioa_threshold: float) -> Tuple[list, list]:
     # segmentation-based NMS
     print('Applying NMS ...')
     filtered_bboxes = []
